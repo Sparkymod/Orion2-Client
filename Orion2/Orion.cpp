@@ -6,6 +6,7 @@
 */
 #include "Orion.h"
 #include "OrionHacks.h"
+#include "PacketHooks.h"
 
 /* CreateWindowExA hook used to rename the main window */
 bool Hook_CreateWindowExA(bool bEnable) {
@@ -37,6 +38,16 @@ bool Hook_CreateMutexA(bool bEnable) {
 				}
 				else {
 					Log("Failed to initialize Orion2.");
+				}
+
+				if (LOG_DATA) {
+					bool bSuccess = InitializePacketHooks();
+					if (bInit) {
+						Log("Successfully applied Packet Hooks!");
+					}
+					else {
+						Log("Failed to apply Packet Hooks.");
+					}
 				}
 
 				if (MULTI_CLIENT) {

@@ -109,7 +109,6 @@ Hook:
 	LPWSPSTARTUP WSPStartup_Hook = [](WORD wVersionRequested, LPWSPDATA lpWSPData, LPWSAPROTOCOL_INFOW lpProtocolInfo, WSPUPCALLTABLE UpcallTable, LPWSPPROC_TABLE lpProcTable) -> int {
 		int nResult = _WSPStartup(wVersionRequested, lpWSPData, lpProtocolInfo, UpcallTable, lpProcTable);
 
-		VM_START
 		if (nResult == 0) {
 			/* Redirect WSPConnect to our hook */
 			_WSPConnect = lpProcTable->lpWSPConnect;
@@ -119,7 +118,6 @@ Hook:
 			_WSPGetPeerName = lpProcTable->lpWSPGetPeerName;
 			lpProcTable->lpWSPGetPeerName = WSPGetPeerName_Hook;
 		}
-		VM_END
 
 		return nResult;
 	};

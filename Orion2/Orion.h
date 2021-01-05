@@ -26,6 +26,8 @@
 
 /* Global external imports */
 #include "Detours.h"
+#include "intrin.h"
+#include "singleton.h"
 
 /* Client constants */
 #define CLIENT_NAME		"Orion2 - A New Beginning" /* The window title */
@@ -41,6 +43,7 @@
 #define MULTI_CLIENT	TRUE /* Enable multi-client */
 #define DISABLE_NXL		TRUE /* Universally disables all NXL functionality (enables LoginUI for user/pass) */
 #define BYPASS_NGS		TRUE /* Strips out NGS from the client */
+#define LOG_DATA		TRUE /* Hooks packet functions for logging */
 
 /* Other constants */
 #define STRING_LOCALE	"en-US" /* The application's locale (korean: ko-KR, english: en-US, chinese: zh-CN) */

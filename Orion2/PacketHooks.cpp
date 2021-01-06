@@ -9,6 +9,9 @@ bool InitializePacketHooks()
 	result &= pInPacket->Decode2_Hook();
 	result &= pInPacket->Decode4_Hook();
 
+	STATIC_SINGLETON(pOutPacket, OutPacket);
+	result &= pOutPacket->OutPacket__Hook();
+
 	return result;
 }
 
@@ -23,7 +26,7 @@ bool InPacket::Decode1_Hook()
 		{
 			char nValue = (char)pSrc;
 			auto pRet = (DWORD)_ReturnAddress();
-			Log("[CInPacket] [%#08x] Decode1: %#08x, %d", pRet, nValue, nValue);
+			//Log("[CInPacket] [%#08x] Decode1: %#08x, %d", pRet, nValue, nValue);
 		}
 		return nResult; // 1
 	};
@@ -42,7 +45,7 @@ bool InPacket::Decode2_Hook()
 		{
 			short nValue = (short)pSrc;
 			auto pRet = (DWORD)_ReturnAddress();
-			Log("[CInPacket] [%#08x] Decode2: %#08x, %d", pRet, nValue, nValue);
+			//Log("[CInPacket] [%#08x] Decode2: %#08x, %d", pRet, nValue, nValue);
 		}
 		return nResult; // 1
 	};
@@ -56,16 +59,30 @@ bool InPacket::Decode4_Hook()
 	pCInPacket__Decode4 CInPacket__Decode4_Hook = [](int pInPacket, int* pDest, int* pSrc, unsigned int nLength)
 		-> signed int
 	{
-		Log("[CInPacket]");
 		int nResult = _CInPacket__Decode4(pInPacket, pDest, pSrc, nLength);
 		if (nResult)
 		{
 			char nValue = (char)pSrc;
 			auto pRet = (DWORD)_ReturnAddress();
-			Log("[CInPacket] [%#08x] Decode4: %#08x, %d", pRet, nValue, nValue);
+			//Log("[CInPacket] [%#08x] Decode4: %#08x, %d", pRet, nValue, nValue);
 		}
 		return nResult; // 1
 	};
 
 	return SetHook(true, reinterpret_cast<void**>(&_CInPacket__Decode4), CInPacket__Decode4_Hook);
+}
+
+bool OutPacket::OutPacket__Hook()
+{
+	static auto _COutPacket__COutPacket = (pCOutPacket__COutPacket)(COutPacket__COutPacket);
+	pCOutPacket__COutPacket COutPacket__COutPacket_Hook = [](void* pOutPacket, void* edx, int nPacketID, int a3)
+		-> void*
+	{
+		auto pRet = (DWORD)_ReturnAddress();
+		if (nPacketID != 18) // spam
+			Log("[COutPacket] [%#08x] PacketID: %#08x (%d).", pRet, nPacketID, nPacketID);
+		return _COutPacket__COutPacket(pOutPacket, edx, nPacketID, a3);
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_COutPacket__COutPacket), COutPacket__COutPacket_Hook);
 }

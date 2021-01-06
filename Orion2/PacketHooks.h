@@ -9,6 +9,7 @@
 #include "Orion.h"
 
 //COutPacket
+#define COutPacket__COutPacket		0x05E2960
 #define COutPacket__AppendBuffer	0x04186A0
 #define COutPacket__Encode1			0x0418700
 #define COutPacket__Encode2			0x0418740
@@ -48,6 +49,9 @@ private:
 
 class OutPacket {
 public:
+	bool OutPacket__Hook();
+private:
+	typedef void*(__fastcall* pCOutPacket__COutPacket)(void* pOutPacket, void* edx, int nPacketID, int a3);
 	typedef char(__thiscall* pCOutPacket__AppendBuffer)(unsigned int* pOutPacket, int nSize);
 	typedef unsigned int(__thiscall* pCOutPacket__Encode1)(unsigned int* pOutPacket, char nValue);
 	typedef unsigned int(__thiscall* pCOutPacket__Encode2)(unsigned int* pOutPacket, __int16 nValue);

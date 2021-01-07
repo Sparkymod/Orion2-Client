@@ -20,8 +20,9 @@
 #define COutPacket__EncodeStrA		0x04188B0 // Unsure
 
 //CInPacket
-#define CInPacket__DecodeHeader		0x0418BB0
+#define CInPacket__DecodeHeader		0x05E2730
 #define CInPacket__Decode1			0x05E32C0
+#define CInPacket__Decode1_Wrapper	0x05E3C20
 #define CInPacket__Decode2			0x05E3380
 #define CInPacket__Decode4			0x05E3440
 #define CInPacket__Decodef			0x05E3500
@@ -32,12 +33,16 @@
 
 class InPacket {
 public:
+	bool DecodeHeader__Hook();
 	bool Decode1_Hook();
 	bool Decode2_Hook();
 	bool Decode4_Hook();
 private:
-	typedef int(__thiscall* pCInPacket__DecodeHeader)(void* pInPacket);
+	typedef int(__fastcall* pCInPacket__DecodeHeader)(void* pInPacket, void* edx);
+
 	typedef signed int(__cdecl* pCInPacket__Decode1)(int pInPacket, char* pDest, char* pSrc, unsigned int nLength);
+	typedef char(__fastcall* pCInPacket__Decode1_Wrapper)(void* ecx, void* edx);
+
 	typedef signed int(__cdecl* pCInPacket__Decode2)(int pInPacket, short* pDest, short* pSrc, unsigned int nLength);
 	typedef signed int(__cdecl* pCInPacket__Decode4)(int pInPacket, int* pDest, int* pSrc, unsigned int nLength);
 	typedef signed int(__cdecl* pCInPacket__Decodef)(int pInPacket, float* pDest, float* pSrc, unsigned int nLength);

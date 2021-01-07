@@ -5,6 +5,7 @@ bool InitializePacketHooks()
 	bool result = true;
 
 	STATIC_SINGLETON(pInPacket, InPacket);
+	result &= pInPacket->DecodeHeader__Hook();
 	result &= pInPacket->Decode1_Hook();
 	result &= pInPacket->Decode2_Hook();
 	result &= pInPacket->Decode4_Hook();
@@ -15,8 +16,30 @@ bool InitializePacketHooks()
 	return result;
 }
 
+bool InPacket::DecodeHeader__Hook()
+{
+	static auto _CInPacket__DecodeHeader = (pCInPacket__DecodeHeader)(CInPacket__DecodeHeader);
+	pCInPacket__DecodeHeader CInPacket__DecodeHeader_Hook = [](void* pInPacket, void* edx)
+		-> int
+	{
+		auto pRet = (DWORD)_ReturnAddress();
+		int nPacketID = _CInPacket__DecodeHeader(pInPacket, edx);
+		if (nPacketID != 89 && nPacketID != 128) // spam
+			Log("[CInPacket] [%#08x] PacketID: %#08x (%d).", pRet, nPacketID, nPacketID);
+		return nPacketID;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CInPacket__DecodeHeader), CInPacket__DecodeHeader_Hook);
+}
+
+
 bool InPacket::Decode1_Hook()
 {
+	bool result = true;
+
+	/*
+	* The actual Decode1 function, which seems to be used in vcalls
+	*/
 	static auto _CInPacket__Decode1 = (pCInPacket__Decode1)(CInPacket__Decode1);
 	pCInPacket__Decode1 CInPacket__Decode1_Hook = [](int pInPacket, char* pDest, char* pSrc, unsigned int nLength)
 		-> signed int
@@ -26,12 +49,30 @@ bool InPacket::Decode1_Hook()
 		{
 			char nValue = (char)pSrc;
 			auto pRet = (DWORD)_ReturnAddress();
-			//Log("[CInPacket] [%#08x] Decode1: %#08x, %d", pRet, nValue, nValue);
 		}
 		return nResult; // 1
 	};
+	result &= SetHook(true, reinterpret_cast<void**>(&_CInPacket__Decode1), CInPacket__Decode1_Hook);
 
-	return SetHook(true, reinterpret_cast<void**>(&_CInPacket__Decode1), CInPacket__Decode1_Hook);
+	/*
+	* The generic version decode1 that uses the above decode1 and takes a iPacket reference to resolve a value
+	* Generally this is used for mode decodes, and the above in object decodes
+	*/
+	static auto _CInPacket__Decode1_Wrapper = (pCInPacket__Decode1_Wrapper)(CInPacket__Decode1_Wrapper);
+	pCInPacket__Decode1_Wrapper CInPacket__Decode1_Wrapper_Hook = [](void* ecx, void* edx)
+		-> char
+	{
+		char nResult = _CInPacket__Decode1_Wrapper(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (nResult)
+		{
+			Log("[CInPacket] [%#08x] Decode1: %#08x, %d", pRet, nResult, nResult);
+		}
+		return nResult; // 1
+	};
+	result &= SetHook(true, reinterpret_cast<void**>(&_CInPacket__Decode1_Wrapper), CInPacket__Decode1_Wrapper_Hook);
+
+	return result;
 }
 
 bool InPacket::Decode2_Hook()

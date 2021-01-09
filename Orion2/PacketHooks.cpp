@@ -47,8 +47,12 @@ bool InPacket::Decode1_Hook()
 		int nResult = _CInPacket__Decode1(pInPacket, pDest, pSrc, nLength);
 		if (nResult)
 		{
-			char nValue = (char)pSrc;
+			char nValue = (char)pDest;
 			auto pRet = (DWORD)_ReturnAddress();
+			if (pRet != CInPacket__Decode1_Wrapper + 5 && pRet != CInPacket__Decode1_Wrapper2 && nValue == 3)
+			{
+				Log("[CInPacket] [%#08x] Decode1: %#08x, %d", pRet, nValue, nValue);
+			}
 		}
 		return nResult; // 1
 	};
@@ -56,7 +60,7 @@ bool InPacket::Decode1_Hook()
 
 	/*
 	* The generic version decode1 that uses the above decode1 and takes a iPacket reference to resolve a value
-	* Generally this is used for mode decodes, and the above in object decodes
+	* Generally this is used for mode decodes, and the original in object decodes
 	*/
 	static auto _CInPacket__Decode1_Wrapper = (pCInPacket__Decode1_Wrapper)(CInPacket__Decode1_Wrapper);
 	pCInPacket__Decode1_Wrapper CInPacket__Decode1_Wrapper_Hook = [](void* ecx, void* edx)
@@ -64,13 +68,31 @@ bool InPacket::Decode1_Hook()
 	{
 		char nResult = _CInPacket__Decode1_Wrapper(ecx, edx);
 		auto pRet = (DWORD)_ReturnAddress();
-		if (nResult)
+		if (nResult == 3)
 		{
-			Log("[CInPacket] [%#08x] Decode1: %#08x, %d", pRet, nResult, nResult);
+			Log("[CInPacket] [%#08x] Decode1_W: %#08x, %d", pRet, nResult, nResult);
 		}
 		return nResult; // 1
 	};
 	result &= SetHook(true, reinterpret_cast<void**>(&_CInPacket__Decode1_Wrapper), CInPacket__Decode1_Wrapper_Hook);
+
+	/*
+	* The other generic version decode1 that uses the above decode1 and takes a iPacket reference to resolve a value
+	* Same function as the function above, i have literally no clue why there's two, there a mini diff in them that virtuall does seemingly nothing significant
+	*/
+	static auto _CInPacket__Decode1_Wrapper2 = (pCInPacket__Decode1_Wrapper2)(CInPacket__Decode1_Wrapper2);
+	pCInPacket__Decode1_Wrapper2 CInPacket__Decode1_Wrapper_Hook2 = [](void* ecx, void* edx)
+		-> char
+	{
+		char nResult = _CInPacket__Decode1_Wrapper2(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (nResult == 3)
+		{
+			Log("[CInPacket] [%#08x] Decode1_W2: %#08x, %d", pRet, nResult, nResult);
+		}
+		return nResult; // 1
+	};
+	result &= SetHook(true, reinterpret_cast<void**>(&_CInPacket__Decode1_Wrapper2), CInPacket__Decode1_Wrapper_Hook2);
 
 	return result;
 }

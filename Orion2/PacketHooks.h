@@ -52,17 +52,26 @@
 #define CInPacket__Decode2ftx		0x05E3B50
 #define CInPacket__Decode2ftp1		0x05E3AD0
 #define CInPacket__Decode2fdx		0x05E3AF0
+#define CInPacket__End				0x05E3BF9
 
 //Unk Decoders (Another buffer instance? Maybe an extended class?)
-#define CUnkDec__DecodeB			0x0639310
-#define CUnkDec__Decode1			0x0639340
-#define CUnkDec__Decode2			0x0639390
-#define CUnkDec__Decode4			0x06393E0
-#define CUnkDec__Decode8			0x0639430
-#define CUnkDec__Decodef			0x0639480
-#define CUnkDec__DecodeBuffer		0x06394D0
-#define CUnkDec__DecodeStrA			0x0639520
-#define CUnkDec__DecodeStr			0x06395B0
+#define CUnknown__DecodeUnknown		0x0639310
+#define CUnknown__Decode1			0x0639340
+#define CUnknown__Decode2			0x0639390
+#define CUnknown__Decode4			0x06393E0
+#define CUnknown__Decode8			0x0639430
+#define CUnknown__Decodef			0x0639480
+#define CUnknown__DecodeBuffer		0x06394D0
+#define CUnknown__DecodeStrA		0x0639520
+#define CUnknown__DecodeStr			0x06395B0
+#define CUnknown__End				0x0639620
+
+static bool ReturnsToWrapper(int dwReturnAddress)
+{
+	bool bInPacketRet = dwReturnAddress > CInPacket__Decode1 && dwReturnAddress < CInPacket__End;
+	bool bUnknownRet = dwReturnAddress > CUnknown__DecodeUnknown && dwReturnAddress < CUnknown__End;
+	return bInPacketRet || bUnknownRet;
+}
 
 class Buffer {
 public:
@@ -89,6 +98,7 @@ private:
 
 class InPacket {
 public:
+	bool DecodeB_Hook();
 	bool Decode1_Hook();
 	bool Decode2_Hook();
 	bool Decode4_Hook();
@@ -123,6 +133,29 @@ private:
 	typedef double(__fastcall* pCInPacket__Decode2ftx)(void* ecx, void* edx, int pDest); // pDest?
 	typedef double(__fastcall* pCInPacket__Decode2ftp1)(void* ecx, void* edx);
 	typedef double(__fastcall* pCInPacket__Decode2fdx)(void* ecx, void* edx, int pDest); // pDest?
+};
+
+class UnknownPacket {
+public:
+	bool DecodeUnknown_Hook();
+	bool Decode1_Hook();
+	bool Decode2_Hook();
+	bool Decode4_Hook();
+	bool Decode8_Hook();
+	bool Decodef_Hook();
+	bool DecodeStr_Hook();
+	bool DecodeStrA_Hook();
+	bool DecodeBuffer_Hook();
+private:
+	typedef int(__fastcall* pCUnknown__DecodeUnknown)(void* ecx, void* edx, int nValue, void* pInPacket); // What is this?
+	typedef char(__fastcall* pCUnknown__Decode1)(void* ecx, void* edx);
+	typedef short(__fastcall* pCUnknown__Decode2)(void* ecx, void* edx);
+	typedef int(__fastcall* pCUnknown__Decode4)(void* ecx, void* edx);
+	typedef float(__fastcall* pCUnknown__Decodef)(void* ecx, void* edx);
+	typedef int64_t(__fastcall* pCUnknown__Decode8)(void* ecx, void* edx);
+	typedef int(__fastcall* pCUnknown__DecodeStr)(void* ecx, void* edx, int pDest);
+	typedef int(__fastcall* pCUnknown__DecodeStrA)(void* ecx, void* edx, int pDest);
+	typedef unsigned int(__fastcall* pCUnknown__DecodeBuffer)(void* ecx, void* edx, int pDest, unsigned int nLength);
 };
 
 class OutPacket {

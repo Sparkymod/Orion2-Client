@@ -15,6 +15,7 @@ bool InitializePacketHooks()
 	result &= pBuffer->DecodeStrA_Hook();
 	
 	STATIC_SINGLETON(pInPacket, InPacket);
+	result &= pInPacket->DecodeB_Hook();
 	result &= pInPacket->Decode1_Hook();
 	result &= pInPacket->Decode2_Hook();
 	result &= pInPacket->Decode4_Hook();
@@ -32,6 +33,16 @@ bool InitializePacketHooks()
 	result &= pInPacket->Decode2ftp1_Hook();
 	result &= pInPacket->Decode2fdx_Hook();
 
+	STATIC_SINGLETON(pUnknown, UnknownPacket);
+	result &= pUnknown->DecodeUnknown_Hook();
+	result &= pUnknown->Decode1_Hook();
+	result &= pUnknown->Decode2_Hook();
+	result &= pUnknown->Decode4_Hook();
+	result &= pUnknown->Decodef_Hook();
+	result &= pUnknown->Decode8_Hook();
+	result &= pUnknown->DecodeStr_Hook();
+	result &= pUnknown->DecodeStrA_Hook();
+
 	STATIC_SINGLETON(pOutPacket, OutPacket);
 	result &= pOutPacket->OutPacket__Hook();
 
@@ -48,7 +59,7 @@ bool Buffer::DecodeHeader__Hook()
 	{
 		auto pRet = (DWORD)_ReturnAddress();
 		int nPacketID = _CBuffer__DecodeHeader(pInPacket, edx);
-		if (LOG_BUFFER && nPacketID != 89 && nPacketID != 128) // spam
+		if (LOG_BUFFER && !ReturnsToWrapper(pRet) && nPacketID != 89 && nPacketID != 128) // spam
 			Log("[CInPacket] [%#08x] PacketID: %#08x (%d).", pRet, nPacketID, nPacketID);
 		return nPacketID;
 	};
@@ -68,7 +79,7 @@ bool Buffer::Decode1_Hook()
 		{
 			uint8_t nValue = (uint8_t)pDest;
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] Decode1: %#02x, %d", pRet, nValue, nValue);
 		}
 		return nResult; // 1
@@ -87,7 +98,7 @@ bool Buffer::Decode2_Hook()
 		{
 			uint16_t nValue = (uint16_t)pDest;
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] Decode2: %#04x, %d", pRet, nValue, nValue);
 		}
 		return nResult; // 2
@@ -106,7 +117,7 @@ bool Buffer::Decode4_Hook()
 		{
 			int nValue = (int)pDest;
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] Decode4: %#08x, %d", pRet, nValue, nValue);
 		}
 		return nResult; // 2
@@ -125,7 +136,7 @@ bool Buffer::Decodef_Hook()
 		{
 			uint32_t nValue = (uint32_t) pDest;
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] Decodef: %#08x, %d", pRet, nValue, (float)nValue);
 		}
 		return nResult; // 2
@@ -144,7 +155,7 @@ bool Buffer::Decode8_Hook()
 		{
 			int64_t nValue = (int64_t) pDest;
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] Decode8: %#16x, %d", pRet, (uint64_t)pDest, nValue);
 		}
 		return nResult; // 2
@@ -162,7 +173,7 @@ bool Buffer::DecodeBuffer_Hook()
 		if (nResult)
 		{
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] DecodeBuffer: %#08x, pDest: %#08x", pRet, pDest);
 		}
 		return nResult; // nLength
@@ -180,7 +191,7 @@ bool Buffer::DecodeStr_Hook()
 		if (nResult)
 		{
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] DecodeStr: %#08x, pDest: %#08x", pRet, pDest);
 		}
 		return nResult; // nLength
@@ -198,7 +209,7 @@ bool Buffer::DecodeStrA_Hook()
 		if (nResult)
 		{
 			auto pRet = (DWORD)_ReturnAddress();
-			if (LOG_BUFFER)
+			if (LOG_BUFFER && !ReturnsToWrapper(pRet))
 				Log("[CBuffer] [%#08x] DecodeStrA: %#08x, pDest: %#08x", pRet, pDest);
 		}
 		return nResult; // nLength
@@ -208,6 +219,22 @@ bool Buffer::DecodeStrA_Hook()
 #pragma endregion
 
 #pragma region CInPacket
+
+bool InPacket::DecodeB_Hook()
+{
+	static auto _CInPacket__DecodeB = (pCInPacket__DecodeB)(CInPacket__DecodeB);
+	pCInPacket__DecodeB CInPacket__DecodeB_Hook = [](void* ecx, void* edx)
+		-> bool
+	{
+		bool nResult = _CInPacket__DecodeB(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CInPacket] [%#08x] DecodeB: %#08x, %d", pRet, nResult, nResult);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CInPacket__DecodeB), CInPacket__DecodeB_Hook);
+}
 
 bool InPacket::Decode1_Hook()
 {
@@ -466,6 +493,155 @@ bool InPacket::Decode2fdx_Hook()
 }
 
 #pragma endregion
+
+#pragma region CUnknown
+
+bool UnknownPacket::DecodeUnknown_Hook()
+{
+	static auto _CUnknown__DecodeUnknown = (pCUnknown__DecodeUnknown)(CUnknown__DecodeUnknown);
+	pCUnknown__DecodeUnknown CUnknown__DecodeUnknown_Hook = [](void* ecx, void* edx, int nValue, void* pInPacket)
+		-> int
+	{
+		int nResult = _CUnknown__DecodeUnknown(ecx, edx, nValue, pInPacket);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] DecodeUnknown: %#08x, %d", pRet, nResult, nResult);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__DecodeUnknown), CUnknown__DecodeUnknown_Hook);
+}
+
+bool UnknownPacket::Decode1_Hook()
+{
+	static auto _CUnknown__Decode1 = (pCUnknown__Decode1)(CUnknown__Decode1);
+	pCUnknown__Decode1 CUnknown__Decode1_Hook = [](void* ecx, void* edx)
+		-> char
+	{
+		char nResult = _CUnknown__Decode1(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] Decode1: %#08x, %d", pRet, nResult, nResult);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__Decode1), CUnknown__Decode1_Hook);
+}
+
+bool UnknownPacket::Decode2_Hook()
+{
+	static auto _CUnknown__Decode2 = (pCUnknown__Decode2)(CUnknown__Decode2);
+	pCUnknown__Decode2 CUnknown__Decode2_Hook = [](void* ecx, void* edx)
+		-> short
+	{
+		short nResult = _CUnknown__Decode2(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] Decode2: %#08x, %d", pRet, nResult, nResult);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__Decode2), CUnknown__Decode2_Hook);
+}
+
+bool UnknownPacket::Decode4_Hook()
+{
+	static auto _CUnknown__Decode4 = (pCUnknown__Decode4)(CUnknown__Decode4);
+	pCUnknown__Decode4 CUnknown__Decode4_Hook = [](void* ecx, void* edx)
+		-> int
+	{
+		int nResult = _CUnknown__Decode4(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] Decode4: %#08x, %d", pRet, nResult, nResult);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__Decode4), CUnknown__Decode4_Hook);
+}
+
+bool UnknownPacket::Decodef_Hook()
+{
+	static auto _CUnknown__Decodef = (pCUnknown__Decodef)(CUnknown__Decodef);
+	pCUnknown__Decodef CUnknown__Decodef_Hook = [](void* ecx, void* edx)
+		-> float
+	{
+		float nResult = _CUnknown__Decodef(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] Decodef: %#08x, %f", pRet, nResult, nResult);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__Decodef), CUnknown__Decodef_Hook);
+}
+
+bool UnknownPacket::Decode8_Hook()
+{
+	static auto _CUnknown__Decode8 = (pCUnknown__Decode8)(CUnknown__Decode8);
+	pCUnknown__Decode8 CUnknown__Decode8_Hook = [](void* ecx, void* edx)
+		-> int64_t
+	{
+		int64_t nResult = _CUnknown__Decode8(ecx, edx);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] Decode8: %llx, %ll", pRet, nResult, nResult);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__Decode8), CUnknown__Decode8_Hook);
+}
+
+bool UnknownPacket::DecodeStr_Hook()
+{
+	static auto _CUnknown__DecodeStr = (pCUnknown__DecodeStr)(CUnknown__DecodeStr);
+	pCUnknown__DecodeStr CUnknown__DecodeStr_Hook = [](void* ecx, void* edx, int pDest)
+		-> int
+	{
+		int nResult = _CUnknown__DecodeStr(ecx, edx, pDest);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] DecodeStr: nLen: %d, pDest: %#08x", pRet, nResult, pDest);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__DecodeStr), CUnknown__DecodeStr_Hook);
+}
+
+bool UnknownPacket::DecodeStrA_Hook()
+{
+	static auto _CUnknown__DecodeStrA = (pCUnknown__DecodeStrA)(CUnknown__DecodeStrA);
+	pCUnknown__DecodeStrA CUnknown__DecodeStrA_Hook = [](void* ecx, void* edx, int pDest)
+		-> int
+	{
+		int nResult = _CUnknown__DecodeStrA(ecx, edx, pDest);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] DecodeStrA: nLen: %d, pDest: %#08x", pRet, nResult, pDest);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__DecodeStrA), CUnknown__DecodeStrA_Hook);
+}
+
+bool UnknownPacket::DecodeBuffer_Hook()
+{
+	static auto _CUnknown__DecodeBuffer = (pCUnknown__DecodeBuffer)(CUnknown__DecodeBuffer);
+	pCUnknown__DecodeBuffer CUnknown__DecodeBuffer_Hook = [](void* ecx, void* edx, int pDest, unsigned int nLength)
+		-> unsigned int
+	{
+		unsigned int nResult = _CUnknown__DecodeBuffer(ecx, edx, pDest, nLength);
+		auto pRet = (DWORD)_ReturnAddress();
+		if (LOG_PACKET)
+			Log("[CUnknown] [%#08x] DecodeBuffer: nLen: %d, pDest: %#08x", pRet, nResult, pDest);
+		return nResult;
+	};
+
+	return SetHook(true, reinterpret_cast<void**>(&_CUnknown__DecodeBuffer), CUnknown__DecodeBuffer_Hook);
+}
+
+#pragma endregion
+
 
 bool OutPacket::OutPacket__Hook()
 {

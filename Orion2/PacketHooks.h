@@ -8,6 +8,10 @@
 
 #include "Orion.h"
 
+//Config
+#define LOG_BUFFER FALSE
+#define LOG_PACKET TRUE
+
 //COutPacket
 #define COutPacket__COutPacket		0x05E2960
 #define COutPacket__AppendBuffer	0x04186A0
@@ -19,39 +23,106 @@
 #define COutPacket__EncodeStr		0x04189B0 // Unsure
 #define COutPacket__EncodeStrA		0x04188B0 // Unsure
 
-//CInPacket
-#define CInPacket__DecodeHeader		0x05E2730
-#define CInPacket__Decode1			0x05E32C0
-#define CInPacket__Decode1_Wrapper	0x05E3C20
-#define CInPacket__Decode1_Wrapper2	0x0639340
-#define CInPacket__Decode2			0x05E3380
-#define CInPacket__Decode4			0x05E3440
-#define CInPacket__Decodef			0x05E3500
-#define CInPacket__Decode8			0x05E35C0
-#define CInPacket__DecodeBuffer		0x05E3680
-#define CInPacket__DecodeStr		0x05E3740
-#define CInPacket__DecodeStrA		0x05E3910
+//CBuffer
+#define CBuffer__DecodeHeader		0x05E2730
+#define CBuffer__Decode1			0x05E32C0
+#define CBuffer__Decode2			0x05E3380
+#define CBuffer__Decode4			0x05E3440
+#define CBuffer__Decodef			0x05E3500
+#define CBuffer__Decode8			0x05E35C0
+#define CBuffer__DecodeBuffer		0x05E3680
+#define CBuffer__DecodeStr			0x05E3740
+#define CBuffer__DecodeStrA			0x05E3910
 
-class InPacket {
+//CInPacket
+#define CInPacket__DecodeB			0x05E2460
+#define CInPacket__Decode1			0x05E3C20
+#define CInPacket__Decode2			0x05E3C70
+#define CInPacket__Decode4			0x05E3CC0
+#define CInPacket__Decode8			0x05E3D10
+#define CInPacket__Decodef			0x05E3D60
+#define CInPacket__DecodeWstrA		0x05E3FE0
+#define CInPacket__DecodeStrA		0x05E3DB0
+#define CInPacket__DecodeStrW		0x05E3E40
+#define CInPacket__DecodeBuffer		0x05E3ED0
+#define CInPacket__DecodeCoordsf	0x05E3B70
+#define CInPacket__DecodeCoords2	0x05E3BB0
+#define CInPacket__Decode2ft10		0x05E3B10
+#define CInPacket__Decode2ft100		0x05E3B30
+#define CInPacket__Decode2ftx		0x05E3B50
+#define CInPacket__Decode2ftp1		0x05E3AD0
+#define CInPacket__Decode2fdx		0x05E3AF0
+
+//Unk Decoders (Another buffer instance? Maybe an extended class?)
+#define CUnkDec__DecodeB			0x0639310
+#define CUnkDec__Decode1			0x0639340
+#define CUnkDec__Decode2			0x0639390
+#define CUnkDec__Decode4			0x06393E0
+#define CUnkDec__Decode8			0x0639430
+#define CUnkDec__Decodef			0x0639480
+#define CUnkDec__DecodeBuffer		0x06394D0
+#define CUnkDec__DecodeStrA			0x0639520
+#define CUnkDec__DecodeStr			0x06395B0
+
+class Buffer {
 public:
 	bool DecodeHeader__Hook();
 	bool Decode1_Hook();
 	bool Decode2_Hook();
 	bool Decode4_Hook();
+	bool Decodef_Hook();
+	bool Decode8_Hook();
+	bool DecodeBuffer_Hook();
+	bool DecodeStr_Hook();
+	bool DecodeStrA_Hook();
 private:
-	typedef int(__fastcall* pCInPacket__DecodeHeader)(void* pInPacket, void* edx);
+	typedef int(__fastcall* pCBuffer__DecodeHeader)(void* pInPacket, void* edx);
+	typedef int(__cdecl* pCBuffer__Decode1)(void* pInPacket, uint8_t* pDest, uint8_t* pSrc, int nLength);
+	typedef int(__cdecl* pCBuffer__Decode2)(void* pInPacket, uint16_t* pDest, uint16_t* pSrc, unsigned int nLength);
+	typedef int(__cdecl* pCBuffer__Decode4)(void* pInPacket, uint32_t* pDest, uint32_t* pSrc, unsigned int nLength);
+	typedef int(__cdecl* pCBuffer__Decodef)(void* pInPacket, uint32_t* pDest, uint32_t* pSrc, unsigned int nLength);
+	typedef int(__cdecl* pCBuffer__Decode8)(void* pInPacket, uint64_t* pDest, uint64_t* pSrc, unsigned int nLength);
+	typedef unsigned int(__cdecl* pCBuffer__DecodeBuffer)(void* pInPacket, int pDest, unsigned int nLength, int nDecodeLen, uint32_t* pSrc);
+	typedef unsigned int(__cdecl* pCBuffer__DecodeStr)(void* pInPacket, int pDest, uint16_t* pSrc, unsigned int nLength);
+	typedef unsigned int(__cdecl* pCBuffer__DecodeStrA)(void* pInPacket, int pDest, uint16_t* pSrc, unsigned int nLength);
+};
 
-	typedef signed int(__cdecl* pCInPacket__Decode1)(int pInPacket, char* pDest, char* pSrc, unsigned int nLength);
-	typedef char(__fastcall* pCInPacket__Decode1_Wrapper)(void* ecx, void* edx);
-	typedef char(__fastcall* pCInPacket__Decode1_Wrapper2)(void* ecx, void* edx);
-
-	typedef signed int(__cdecl* pCInPacket__Decode2)(int pInPacket, short* pDest, short* pSrc, unsigned int nLength);
-	typedef signed int(__cdecl* pCInPacket__Decode4)(int pInPacket, int* pDest, int* pSrc, unsigned int nLength);
-	typedef signed int(__cdecl* pCInPacket__Decodef)(int pInPacket, float* pDest, float* pSrc, unsigned int nLength);
-	typedef signed int(__cdecl* pCInPacket__Decode8)(int pInPacket, long* pDest, long* pSrc, unsigned int nLength);
-	typedef signed int(__cdecl* pCInPacket__DecodeBuffer)(int pInPacket, int pDest, unsigned int nSize, int pSrc, int* nLength);
-	typedef signed int(__cdecl* pCInPacket__DecodeStr)(int pInPacket, int pDest, unsigned short* pSrc, unsigned int nLength);
-	typedef signed int(__cdecl* pCInPacket__DecodeStrA)(int pInPacket, int pDest, unsigned short* pSrc, unsigned int nLength);
+class InPacket {
+public:
+	bool Decode1_Hook();
+	bool Decode2_Hook();
+	bool Decode4_Hook();
+	bool Decode8_Hook();
+	bool Decodef_Hook();
+	bool DecodeWstrA_Hook();
+	bool DecodeStrA_Hook();
+	bool DecodeStrW_Hook();
+	bool DecodeBuffer_Hook();
+	bool DecodeCoordsf_Hook();
+	bool DecodeCoords2_Hook();
+	bool Decode2ft10_Hook();
+	bool Decode2ft100_Hook();
+	bool Decode2ftx_Hook();
+	bool Decode2ftp1_Hook();
+	bool Decode2fdx_Hook();
+private:
+	typedef bool(__fastcall* pCInPacket__DecodeB)(void* ecx, void* edx);
+	typedef char(__fastcall* pCInPacket__Decode1)(void* ecx, void* edx);
+	typedef short(__fastcall* pCInPacket__Decode2)(void* ecx, void* edx);
+	typedef int(__fastcall* pCInPacket__Decode4)(void* ecx, void* edx);
+	typedef float(__fastcall* pCInPacket__Decodef)(void* ecx, void* edx);
+	typedef int64_t(__fastcall* pCInPacket__Decode8)(void* ecx, void* edx);
+	typedef int(__fastcall* pCInPacket__DecodeWStrA)(void* ecx, void* edx, int pDest);
+	typedef int(__fastcall* pCInPacket__DecodeStrA)(void* ecx, void* edx, int pDest);
+	typedef int(__fastcall* pCInPacket__DecodeStrW)(void* ecx, void* edx, int pDest);
+	typedef unsigned int(__fastcall* pCInPacket__DecodeBuffer)(void* ecx, void* edx, int pDest, unsigned int nLength);
+	typedef float*(__fastcall* pCInPacket__DecodeCoordsf)(void* ecx, void* edx, float* pDest);
+	typedef float*(__fastcall* pCInPacket__DecodeCoords2)(void* ecx, void* edx, float* pDest);
+	typedef double(__fastcall* pCInPacket__Decode2ft10)(void* ecx, void* edx);
+	typedef double(__fastcall* pCInPacket__Decode2ft100)(void* ecx, void* edx);
+	typedef double(__fastcall* pCInPacket__Decode2ftx)(void* ecx, void* edx, int pDest); // pDest?
+	typedef double(__fastcall* pCInPacket__Decode2ftp1)(void* ecx, void* edx);
+	typedef double(__fastcall* pCInPacket__Decode2fdx)(void* ecx, void* edx, int pDest); // pDest?
 };
 
 class OutPacket {

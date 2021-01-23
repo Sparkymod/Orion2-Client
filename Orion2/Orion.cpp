@@ -107,12 +107,29 @@ void Log(const char* sFormat, ...) {
 	char* sText = new char[MAX_BUFFER];
 	va_list aArgs;
 	va_start(aArgs, sFormat);
+
+	// Console Log
 	vsnprintf(sText, MAX_BUFFER - 1, sFormat, aArgs);
-	// Concat a new line since we're printf-ing
 	strcat(sText, "\n");
-	// Print the formatted string to console
 	printf(sText);
-	// Cleanup memory
+	
+	// Get Filename for date
+	time_t rawtime;
+	struct tm* timeinfo;
+	char buffer[80];
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+	strftime(buffer, 80, "./Log/client/%d-%m-%Y.log", timeinfo);
+	std::string SFileName = std::string(buffer);
+
+	// Append logs to file
+	FILE* pFile = fopen(buffer, "a");
+	if (pFile)
+	{
+		fprintf(pFile, sText);
+		fflush(pFile);
+	}
+
 	va_end(aArgs);
 	delete[] sText;
 #endif
